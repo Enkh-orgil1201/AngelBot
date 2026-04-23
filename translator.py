@@ -30,36 +30,23 @@ def _call_gemini_with_retry(payload: dict) -> dict:
         print(f"     {model} exhausted, trying next model")
     raise RuntimeError(f"All Gemini models failed. Last: {last_err}")
 
-SYSTEM_PROMPT = """Чи бол сэтгэл сэргээх, оюун санааны (spiritual) бичвэрээс
-хамгийн гол мэдрэмжийг монгол хэлээр СОНГОН ГАРГАДАГ зохиолч.
+SYSTEM_PROMPT = """Чи бол сэтгэл сэргээх, оюун санааны (spiritual) бичвэрийг
+монгол хэл рүү дулаахан, нинжин сэтгэлтэйгээр БҮТЭН ОРЧУУЛДАГ зохиолч.
+Mindfulness, meditation, self-love, motivation сэдвийг уншигчдын зүрхэнд хүргэнэ.
 
-ХЭТ ЧУХАЛ — Facebook "See more"-д тасрахгүй байхын тулд бичлэг МАШ БОГИНО.
-  ✔ Title: 50 тэмдэгтээс богино
-  ✔ Body: ЗӨВХӨН 2-3 өгүүлбэр, 150-220 тэмдэгт
-  ✔ Нэг гол ишлэл/санааг гаргаж, үлдсэнийг хасна
-
-Арга:
-- Өгүүллийг бүхэлд нь дамжуулахгүй. Уншигчийн зүрхэнд хүрэх 1 гол санааг сонгож,
-  уянгалаг монголоор яруу тод хэлнэ.
-- Англи эх зохиол дахь ишлэлийг монголоор сайхан хэлбэрт оруулж ашигла.
-- Дулаахан үгс: "сэтгэл", "амар амгалан", "талархал", "өөрийгөө хайрлах",
-  "итгэл", "урам зориг", "ухамсар".
-- 3-5 hashtag нэмнэ: #сэтгэл #урам #оюунсанаа #өөрийгөөхайрла #амарамгалан гэх мэт.
+Дүрэм:
+- Гарчгийг богино, сэтгэл хөдөлгөм (80 тэмдэгтээс бага)
+- Бүхэл нийтлэлийг ХАМГИЙН БҮТЭН БАЙДЛААР монгол руу орчуулна, хураахгүй
+- Параграфуудыг хадгалж, уншихад тохь тухтай, агаартай болгоно
+- Үг бус санаа, сэтгэлийг голчлон орчуулна (уран, уянгалаг байдлаар)
+- Зохиогчийн ишлэлийг хашилтаар хадгална
+- Дулаахан үгс: "сэтгэл", "дотоод амар амгалан", "талархал", "ухамсар",
+  "өөрийгөө хайрлах", "итгэл", "урам зориг", "анхаарал"
+- 4-6 spiritual hashtag нэмнэ
+  (жишээ: #сэтгэл #урам #медитаци #оюунсанаа #өөрийгөөхайрла #амарамгалан)
 
 Хариултаа ЗӨВХӨН доорх JSON форматаар буцаана:
 {"title": "...", "body": "...", "hashtags": ["#tag1", "#tag2"]}"""
-
-
-def _truncate_body(body: str, max_chars: int = 230) -> str:
-    if len(body) <= max_chars:
-        return body
-    cut = body[:max_chars]
-    # snap to last sentence boundary if possible
-    for marker in [". ", "! ", "? ", "\n"]:
-        idx = cut.rfind(marker)
-        if idx > max_chars * 0.6:
-            return cut[: idx + 1].rstrip()
-    return cut.rstrip() + "…"
 
 
 def translate_article(title: str, body: str, source_name: str, source_url: str) -> dict:
@@ -77,7 +64,7 @@ def translate_article(title: str, body: str, source_name: str, source_url: str) 
         "generationConfig": {
             "responseMimeType": "application/json",
             "temperature": 0.7,
-            "maxOutputTokens": 3000,
+            "maxOutputTokens": 8000,
             "thinkingConfig": {"thinkingBudget": 0},
         },
     }
@@ -102,7 +89,7 @@ def translate_article(title: str, body: str, source_name: str, source_url: str) 
 
     return {
         "title": data.get("title", title),
-        "body": _truncate_body(data.get("body", "")),
+        "body": data.get("body", ""),
         "hashtags": data.get("hashtags", []),
     }
 

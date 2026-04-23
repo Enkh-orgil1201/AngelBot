@@ -3,7 +3,7 @@ import time
 import traceback
 
 from config import RSS_FEEDS, MAX_POSTS_PER_RUN, AI_KEYWORDS, FB_PAGE_ID
-from rss_fetcher import fetch_feed, fetch_article_text
+from rss_fetcher import fetch_feed, fetch_article
 from translator import translate_article, format_fb_post
 from facebook_poster import post_to_page
 from storage import (
@@ -69,7 +69,9 @@ def run(dry_run: bool = False) -> None:
 
             print(f"  -> {item['title'][:70]}")
 
-            body = fetch_article_text(item["link"]) or item["summary"]
+            fetched = fetch_article(item["link"])
+            body = fetched["text"] or item["summary"]
+            image_url = fetched["image"]
             if len(body) < 100:
                 print("     skipped (too short)")
                 continue
@@ -88,7 +90,7 @@ def run(dry_run: bool = False) -> None:
                 print("     " + post_text.replace("\n", "\n     "))
             else:
                 try:
-                    res = post_to_page(post_text)
+                    res = post_to_page(post_text, image_url=image_url)
                     fb_id = res.get("id", "")
                     print(f"     posted id={fb_id}")
                 except Exception as e:
