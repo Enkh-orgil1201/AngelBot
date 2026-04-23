@@ -30,24 +30,36 @@ def _call_gemini_with_retry(payload: dict) -> dict:
         print(f"     {model} exhausted, trying next model")
     raise RuntimeError(f"All Gemini models failed. Last: {last_err}")
 
-SYSTEM_PROMPT = """Чи бол сэтгэл сэргээх, оюун санааны (spiritual) агуулгыг
-монгол хэл рүү дулаахан, нинжин сэтгэлтэй байдлаар орчуулдаг зохиолч. Mindfulness,
-meditation, self-love, motivation сэдвийг уншигчид хүрэхээр, халамжтай өнгөөр хүргэнэ.
+SYSTEM_PROMPT = """Чи бол сэтгэл сэргээх, оюун санааны (spiritual) бичвэрээс
+хамгийн гол мэдрэмжийг монгол хэлээр СОНГОН ГАРГАДАГ зохиолч.
 
-Дүрэм:
-- Гарчгийг богино, сэтгэл хөдөлгөм (80 тэмдэгтээс бага) болгоно
-- Биеийн текстийг 2-4 богино, амьсгал авч болох параграф болгоно
-- Шууд үг биш утга, сэтгэлийг гол болгон орчуулна (free translation)
-- Зохиогчийн ишлэлийг хашилтаар хадгална
-- "Сэтгэл", "дотоод амар амгалан", "талархал", "ухамсар", "анхаарал",
-  "өөрийгөө хайрлах", "итгэл", "урам зориг" гэх мэт дулаахан үгс ашиглана
-- Англи brand/name-үүдийг шаардлагатай бол үлдээнэ (зохиогчийн нэр гэх мэт)
-- 3-5 spiritual/motivation hashtag нэмнэ
-  (жишээ: #сэтгэл #урам #медитаци #оюунсанаа #өөрийгөөхайрла #амарамгалан)
-- Facebook-д эерэг сэтгэгдэл төрүүлэх байдлаар бичнэ
+ХЭТ ЧУХАЛ — Facebook "See more"-д тасрахгүй байхын тулд бичлэг МАШ БОГИНО.
+  ✔ Title: 50 тэмдэгтээс богино
+  ✔ Body: ЗӨВХӨН 2-3 өгүүлбэр, 150-220 тэмдэгт
+  ✔ Нэг гол ишлэл/санааг гаргаж, үлдсэнийг хасна
+
+Арга:
+- Өгүүллийг бүхэлд нь дамжуулахгүй. Уншигчийн зүрхэнд хүрэх 1 гол санааг сонгож,
+  уянгалаг монголоор яруу тод хэлнэ.
+- Англи эх зохиол дахь ишлэлийг монголоор сайхан хэлбэрт оруулж ашигла.
+- Дулаахан үгс: "сэтгэл", "амар амгалан", "талархал", "өөрийгөө хайрлах",
+  "итгэл", "урам зориг", "ухамсар".
+- 3-5 hashtag нэмнэ: #сэтгэл #урам #оюунсанаа #өөрийгөөхайрла #амарамгалан гэх мэт.
 
 Хариултаа ЗӨВХӨН доорх JSON форматаар буцаана:
 {"title": "...", "body": "...", "hashtags": ["#tag1", "#tag2"]}"""
+
+
+def _truncate_body(body: str, max_chars: int = 280) -> str:
+    if len(body) <= max_chars:
+        return body
+    cut = body[:max_chars]
+    # snap to last sentence boundary if possible
+    for marker in [". ", "! ", "? ", "\n"]:
+        idx = cut.rfind(marker)
+        if idx > max_chars * 0.6:
+            return cut[: idx + 1].rstrip()
+    return cut.rstrip() + "…"
 
 
 def translate_article(title: str, body: str, source_name: str, source_url: str) -> dict:
@@ -90,7 +102,7 @@ def translate_article(title: str, body: str, source_name: str, source_url: str) 
 
     return {
         "title": data.get("title", title),
-        "body": data.get("body", ""),
+        "body": _truncate_body(data.get("body", "")),
         "hashtags": data.get("hashtags", []),
     }
 
