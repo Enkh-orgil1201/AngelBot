@@ -1,0 +1,47 @@
+name: Auto Post News
+
+on:
+  schedule:
+    # 3 цаг тутамд 1 удаа (UTC минут 0)
+    # UTC 00,03,06,09,12,15,18,21 → Монгол 08,11,14,17,20,23,02,05
+    - cron: "0 */3 * * *"
+  workflow_dispatch:  # Гараар ажиллуулах товч
+
+permissions:
+  contents: write
+
+jobs:
+  post:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run bot
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          FB_PAGE_ID: ${{ secrets.FB_PAGE_ID }}
+          FB_PAGE_ACCESS_TOKEN: ${{ secrets.FB_PAGE_ACCESS_TOKEN }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          MAX_POSTS_PER_RUN: "1"
+        run: python main.py
+
+      - name: Commit state files
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add posted.json posted_titles.json || true
+          git diff --cached --quiet || git commit -m "chore: update post state [skip ci]"
+          git push || true
