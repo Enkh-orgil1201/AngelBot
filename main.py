@@ -88,7 +88,7 @@ def run(dry_run: bool = False) -> None:
                 print("     " + post_text.replace("\n", "\n     "))
             else:
                 try:
-                    res = post_to_page(post_text, link=item["link"])
+                    res = post_to_page(post_text)
                     fb_id = res.get("id", "")
                     print(f"     posted id={fb_id}")
                 except Exception as e:

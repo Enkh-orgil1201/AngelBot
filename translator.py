@@ -100,9 +100,6 @@ def format_fb_post(translated: dict, source_name: str, source_url: str) -> str:
         translated["title"],
         "",
         translated["body"],
-        "",
-        f"Эх сурвалж: {source_name}",
-        source_url,
     ]
     if translated.get("hashtags"):
         parts.append("")
